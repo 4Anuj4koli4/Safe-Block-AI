@@ -1,0 +1,7 @@
+pandas
+sqlalchemy
+pymysql
+requests
+tqdm
+python-dateutil
+cryptography

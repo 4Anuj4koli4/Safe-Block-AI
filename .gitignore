@@ -1,0 +1,37 @@
+# --- Data ---
+data/*.csv
+data/*.json
+!data/.gitkeep
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+env/
+venv/
+.venv/
+.env
+
+# --- Node / React ---
+node_modules/
+web/node_modules/
+dist/
+web/dist/
+.eslintcache
+
+# --- Docker & DB ---
+db_data/
+.docker-build-cache
+
+# --- IDE & OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# --- Logs ---
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
