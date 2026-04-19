@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, useMapEvents, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap, Popup } from 'react-leaflet';
 import axios from 'axios';
-import { Shield, AlertTriangle, Moon, Info, MapPin, Activity } from 'lucide-react';
+import { Shield, AlertTriangle, Moon, Info, MapPin, Activity, Search, X } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
-// Fix for default Leaflet marker icons in React
+// Fix for default Leaflet marker icons
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -15,9 +15,20 @@ L.Icon.Default.mergeOptions({
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
-function LocationMarker({ onLocationSelected }) {
-  const [position, setPosition] = useState(null);
-  
+// Component to handle map movements (flying to locations)
+function MapHandler({ position }) {
+  const map = useMap();
+  useEffect(() => {
+    if (position) {
+      map.flyTo(position, 15, {
+        duration: 1.5
+      });
+    }
+  }, [position, map]);
+  return null;
+}
+
+function LocationMarker({ position, setPosition, onLocationSelected }) {
   useMapEvents({
     click(e) {
       setPosition(e.latlng);
@@ -36,6 +47,12 @@ function App() {
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [position, setPosition] = useState(null);
+  
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searching, setSearching] = useState(false);
 
   const fetchSafetyReport = async (latlng) => {
     setLoading(true);
@@ -53,10 +70,47 @@ function App() {
     }
   };
 
+  const handleSearch = async (query) => {
+    setSearchQuery(query);
+    if (query.length < 3) {
+      setSearchResults([]);
+      return;
+    }
+
+    setSearching(true);
+    try {
+      // Nominatim API - Bounded to Chicago for now as per user request
+      // Chicago Viewbox: -87.9,42.0,-87.5,41.6
+      const response = await axios.get(`https://nominatim.openstreetmap.org/search`, {
+        params: {
+          q: query,
+          format: 'json',
+          addressdetails: 1,
+          limit: 5,
+          viewbox: '-87.9,42.0,-87.5,41.6',
+          bounded: 1
+        }
+      });
+      setSearchResults(response.data);
+    } catch (err) {
+      console.error("Search failed:", err);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const selectResult = (result) => {
+    const latlng = { lat: parseFloat(result.lat), lng: parseFloat(result.lon) };
+    setPosition(latlng);
+    fetchSafetyReport(latlng);
+    setSearchResults([]);
+    setSearchQuery(result.display_name.split(',')[0]); // Use short name
+  };
+
   const getScoreColor = (score) => {
-    if (score >= 80) return '#10b981'; // Success
-    if (score >= 50) return '#f59e0b'; // Warning
-    return '#ef4444'; // Danger
+    if (score >= 80) return '#10b981';
+    if (score >= 50) return '#f59e0b';
+    return '#ef4444';
   };
 
   return (
@@ -68,8 +122,44 @@ function App() {
         </div>
         
         <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-          Real-time hyper-local safety analysis. Click any city block on the map to generate a safety report.
+          Real-time hyper-local safety analysis.
         </p>
+
+        {/* Search Component */}
+        <div className="search-container">
+          <div className="search-input-wrapper">
+            <Search className="search-icon" size={18} />
+            <input 
+              type="text" 
+              className="search-input"
+              placeholder="Search place, street, landmark..."
+              value={searchQuery}
+              onChange={(e) => handleSearch(e.target.value)}
+            />
+            {searchQuery && (
+              <X 
+                size={16} 
+                style={{ position: 'absolute', right: '1rem', cursor: 'pointer', color: 'var(--text-muted)' }} 
+                onClick={() => {setSearchQuery(''); setSearchResults([]);}}
+              />
+            )}
+          </div>
+          
+          {searchResults.length > 0 && (
+            <div className="search-results">
+              {searchResults.map((res) => (
+                <div 
+                  key={res.place_id} 
+                  className="search-result-item"
+                  onClick={() => selectResult(res)}
+                >
+                  <strong>{res.display_name.split(',')[0]}</strong>
+                  <span className="search-result-sub">{res.display_name.split(',').slice(1, 3).join(',')}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         <hr style={{ border: '0', borderTop: '1px solid rgba(255,255,255,0.1)', margin: '0.5rem 0' }} />
 
@@ -78,7 +168,7 @@ function App() {
         {!loading && !report && !error && (
           <div className="placeholder-msg">
             <MapPin size={48} style={{ marginBottom: '1rem', opacity: 0.5 }} />
-            <br /> Select a location to start
+            <br /> Search or click the map to start
           </div>
         )}
 
@@ -115,7 +205,7 @@ function App() {
             <div style={{ marginTop: '1.5rem', background: 'rgba(99, 102, 241, 0.1)', padding: '1rem', borderRadius: '0.5rem', fontSize: '0.85rem', textAlign: 'left' }}>
               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
                 <Info size={24} color="var(--primary)" />
-                <p style={{ margin: 0 }}>This score evaluates the 111x111m grid cell based on crime severity and time-of-day weights. Higher scores indicate lower criminal density.</p>
+                <p style={{ margin: 0 }}>hyper-local assessment for the 111x111m grid cell at this location.</p>
               </div>
             </div>
           </div>
@@ -133,7 +223,8 @@ function App() {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
             url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
           />
-          <LocationMarker onLocationSelected={fetchSafetyReport} />
+          <MapHandler position={position} />
+          <LocationMarker position={position} setPosition={setPosition} onLocationSelected={fetchSafetyReport} />
         </MapContainer>
       </div>
     </div>
