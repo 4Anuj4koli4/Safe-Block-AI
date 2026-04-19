@@ -96,4 +96,4 @@ A block starts with a balance of **100 points**. Penalties are applied as follow
 ```
 
 ## 📜 License
-Internal Development - Built with 💜 by Antigravity.
+Internal Development - Built with 💜 
