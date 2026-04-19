@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap, Popup } from 'react-leaflet';
 import axios from 'axios';
-import { Shield, AlertTriangle, Moon, Info, MapPin, Activity, Search, X } from 'lucide-react';
+import { Shield, AlertTriangle, Moon, Sun, Info, MapPin, Activity, Search, X } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
@@ -54,6 +54,9 @@ function App() {
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
 
+  // Map Theme state
+  const [isDarkMode, setIsDarkMode] = useState(true);
+
   const fetchSafetyReport = async (latlng) => {
     setLoading(true);
     setError(null);
@@ -79,8 +82,6 @@ function App() {
 
     setSearching(true);
     try {
-      // Nominatim API - Bounded to Chicago for now as per user request
-      // Chicago Viewbox: -87.9,42.0,-87.5,41.6
       const response = await axios.get(`https://nominatim.openstreetmap.org/search`, {
         params: {
           q: query,
@@ -104,7 +105,7 @@ function App() {
     setPosition(latlng);
     fetchSafetyReport(latlng);
     setSearchResults([]);
-    setSearchQuery(result.display_name.split(',')[0]); // Use short name
+    setSearchQuery(result.display_name.split(',')[0]); 
   };
 
   const getScoreColor = (score) => {
@@ -112,6 +113,9 @@ function App() {
     if (score >= 50) return '#f59e0b';
     return '#ef4444';
   };
+
+  const darkMapUrl = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+  const lightMapUrl = "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
 
   return (
     <div className="app-container">
@@ -124,6 +128,22 @@ function App() {
         <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
           Real-time hyper-local safety analysis.
         </p>
+
+        {/* Map Theme Toggle */}
+        <div className="theme-toggle-container">
+          <div className="theme-toggle-label">
+            {isDarkMode ? <Moon size={16} /> : <Sun size={16} />}
+            {isDarkMode ? 'Dark Map' : 'Bright Map'}
+          </div>
+          <label className="switch">
+            <input 
+              type="checkbox" 
+              checked={!isDarkMode} 
+              onChange={() => setIsDarkMode(!isDarkMode)} 
+            />
+            <span className="slider"></span>
+          </label>
+        </div>
 
         {/* Search Component */}
         <div className="search-container">
@@ -220,8 +240,9 @@ function App() {
           style={{ height: '100%', width: '100%' }}
         >
           <TileLayer
+            key={isDarkMode ? 'dark' : 'light'}
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            url={isDarkMode ? darkMapUrl : lightMapUrl}
           />
           <MapHandler position={position} />
           <LocationMarker position={position} setPosition={setPosition} onLocationSelected={fetchSafetyReport} />
