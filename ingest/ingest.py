@@ -2,9 +2,13 @@ import pandas as pd
 from sqlalchemy import create_engine
 import os
 import sys
+from dotenv import load_dotenv
+
+# Load environment variables from .env file if present
+load_dotenv()
 
 # Configuration
-DB_URL = os.getenv("DATABASE_URL", "mysql+pymysql://root:rootpassword@localhost:3306/crime_db")
+DB_URL = os.getenv("DATABASE_URL", "mysql+pymysql://root:rootpassword@localhost:3307/crime_db")
 CSV_PATH = "data/crimes.csv"
 
 # Severity Weights

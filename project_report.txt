@@ -1,0 +1,58 @@
+SafeBlock AI: Technical Project Report
+
+--------------------------------------------------------------------------------
+1. Project High-Level Objective
+--------------------------------------------------------------------------------
+The goal was to move beyond "vague city heatmaps" and provide users with a standardized safety metric for specific city blocks. This helps users make data-driven decisions when choosing where to live, park, or walk.
+
+--------------------------------------------------------------------------------
+2. Technical Stack & Rationale
+--------------------------------------------------------------------------------
+
+Frontend: React (Vite) + Leaflet.js
+- Why React? Real-time UI updates (Safety Reports, Search results) require a reactive state management system.
+- Why Leaflet? It is lightweight, mobile-friendly, and integrates seamlessly with OpenStreetMap. It allowed us to implement custom flyTo navigation and dynamic tile-switching (Dark/Light modes).
+- Aesthetics: We used Glassmorphism and a deep-navy "Smart City" color palette to give the project a premium, enterprise-grade feel.
+
+Backend: Python (FastAPI)
+- Why FastAPI? It is the fastest Python framework for building APIs. Its asynchronous nature allows it to handle multiple spatial queries from users simultaneously with near-zero latency.
+- Scalability: Pydantic models ensure data validation for every coordinate request.
+
+Database: MySQL 8.0
+- Why MySQL? We needed a robust, relational store for historical crime data. 
+- Indexing: We implemented a Composite Spatial Index on (block_lat, block_lon). This allows the database to find a specific grid cell out of millions of rows in milliseconds without scanning the whole table.
+
+Infrastructure: Docker & Docker Compose
+- Rationale: By containerizing the DB, API, and Web services, we ensure the project runs identically on Windows, Mac, or Linux. It eliminates "works on my machine" issues and simplifies deployment to the cloud (AWS/GCP).
+
+--------------------------------------------------------------------------------
+3. Core Techniques & Algorithms
+--------------------------------------------------------------------------------
+
+A. Coordinate Truncation (The "Grid" Logic)
+Raw GPS data is "noisy" (e.g., 41.8781234). To cluster crimes into a recognizable city block, we implemented 3-Decimal Place Rounding.
+- The Math: Lat = Round(Lat, 3). 
+- The Result: This creates a grid of cells approximately 111 meters x 111 meters. 
+- The Why: It solves the "chaos" of individual plotting. If five crimes happened on one corner, they are all captured in the same "Block ID," giving a true representation of that specific street segment.
+
+B. Weighted Safety Scoring (WSS)
+We don't treat all crimes equally. A "Theft" vs. a "Homicide" impacts safety perception differently.
+- Severity Weighting: Map types like Homicide to -5, Battery to -3, and Theft to -1.
+- The Night Penalty: Statistically, crime at night affects personal safety perception more heavily. We apply an additional -0.5 penalty for any crime occurring between 8:00 PM and 6:00 AM.
+- Normalization: The score starts at 100 and is capped at 0.
+
+C. Geospatial Search (Nominatim Integration)
+- Implementation: We integrated the OpenStreetMap Nominatim API.
+- Optimization: We bounded the search viewbox strictly to Chicago coordinates. This ensures that when a user searches for "Union Station," they don't get results in London or Washington D.C. first.
+
+--------------------------------------------------------------------------------
+4. The Data Pipeline
+--------------------------------------------------------------------------------
+- Tool: Pandas for Python.
+- Technique: Batch Ingestion.
+- Why: Processing 1.8GB of CSV data (years of Chicago crime) is memory-intensive. Our script cleans, truncates, and batch-inserts data in chunks of 1,000 to ensure the SQL server isn't overwhelmed during the initial setup.
+
+--------------------------------------------------------------------------------
+Summary for Presentation
+--------------------------------------------------------------------------------
+"SafeBlock AI isn't just a map—it's a spatial calculator. By mathematically gridding the city into 111-meter blocks and applying a severity-weighted scoring algorithm, we turn millions of rows of chaotic historical data into a simple 0-100 safety score that anyone can understand in seconds."

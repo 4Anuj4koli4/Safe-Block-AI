@@ -4,6 +4,9 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 import os
 from decimal import Decimal
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = FastAPI(title="Smart Crime-Based Housing API")
 

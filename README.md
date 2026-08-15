@@ -2,7 +2,7 @@
 
 SafeBlock AI is a spatial decision-making system designed to help users evaluate the safety of specific city blocks. Unlike traditional heatmaps, it uses a **Coordinate Truncation (111m x 111m Grid)** approach to provide hyper-local, actionable safety scores.
 
-![Smart City Dashboard](https://images.unsplash.com/photo-1573804633927-bfcbcd909acd?auto=format&fit=crop&q=80&w=1200)
+![SafeBlock AI Dashboard](assets/Logo.png)
 
 ## 🚀 Key Features
 
@@ -36,6 +36,7 @@ docker-compose up --build
 ```
 
 This will start:
+
 - **Database**: `localhost:3306`
 - **Backend API**: `localhost:8000`
 - **Frontend UI**: `localhost:3000`
@@ -62,16 +63,19 @@ python ingest/ingest.py data/chicago_crimes.csv
 ## 🧠 Core Spatial Logic
 
 ### Coordinate Truncation
+
 Raw GPS data is often too precise and scattered for analytical grouping. By truncating coordinates to **3 decimal places**, we effectively create a grid across the city where each cell is roughly **111m x 111m**.
 
-| Precision | Grid Size | Goal |
-| :--- | :--- | :--- |
-| 2 Decimals | ~1.1 km | Neighborhood Analysis |
+| Precision      | Grid Size  | Goal                      |
+| :------------- | :--------- | :------------------------ |
+| 2 Decimals     | ~1.1 km    | Neighborhood Analysis     |
 | **3 Decimals** | **~111 m** | **Block-by-Block Safety** |
-| 4 Decimals | ~11 m | Building/Property level |
+| 4 Decimals     | ~11 m      | Building/Property level   |
 
 ### Safety Score Formula
+
 A block starts with a balance of **100 points**. Penalties are applied as follows:
+
 - **Severity Weight**: Homicide (-5), Battery (-3), Theft (-1), etc.
 - **Night Penalty**: An additional **-0.5** for every crime occurring between 8 PM and 6 AM.
 - **Normalization**: All scores are capped at a minimum of 0.
@@ -96,4 +100,5 @@ A block starts with a balance of **100 points**. Penalties are applied as follow
 ```
 
 ## 📜 License
-Internal Development - Built with 💜 
+
+Internal Development - Built with 💜

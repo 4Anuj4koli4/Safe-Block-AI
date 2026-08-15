@@ -6,3 +6,4 @@ pandas
 python-multipart
 pydantic
 cryptography
+python-dotenv
